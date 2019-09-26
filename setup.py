@@ -18,7 +18,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup(
     name='urlp',
-    version='0.0.0',
+    version='0.0.1',
     description='A simple command-line utility for parsing URLs.',
     long_description=long_description,
     long_description_content_type='text/markdown',
