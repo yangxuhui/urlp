@@ -6,9 +6,9 @@ import sys
 import tldextract
 
 try:
-    from urlparse import urlparse
+    from urlparse import parse_qs, urlparse
 except ImportError:
-    from urllib.parse import urlparse
+    from urllib.parse import parse_qs, urlparse
 
 
 def run_host_command(args, url):
@@ -28,6 +28,18 @@ def run_path_command(args, url):
         print(path)
 
 
+def run_query_command(args, url):
+    query = urlparse(url).query
+    if args.query_field:
+        kvs = parse_qs(query)
+        if args.query_field not in kvs:
+            sys.stderr.write('no query_field named {}\n'.format(args.query_field))
+            exit(1)
+        print(','.join(kvs[args.query_field]))
+    else:
+        print(query)
+
+
 def run_registered_domain(args, url):
     print(tldextract.extract(url).registered_domain)
 
@@ -39,6 +51,7 @@ def run_default_command(args, url):
 commands = {
     'host': run_host_command,
     'path': run_path_command,
+    'query': run_query_command,
     'registered_domain': run_registered_domain,
     'all': run_default_command,
 }
@@ -70,6 +83,8 @@ def main():
                         help='Part of URL to show')
     parser.add_argument('--path_index', type=int, default=-1,
                         help='Filter parsed path by index')
+    parser.add_argument('--query_field', 
+                        help='Value for the specified query field')
 
     args = parser.parse_args()
 
