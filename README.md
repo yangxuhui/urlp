@@ -11,6 +11,15 @@ $ urlp --part=path "http://audience.cnn.com/services/activatealert.jsp?source=cn
 $ urlp --part=path --path_index=0 "http://audience.cnn.com/services/activatealert.jsp?source=cnn&id=203&value=hurricane+isabel"
 services
 ```
+urlp often works together with other unix command-line tools. For example:
+* Find all hosts in urls, sorted by count.
+```bash
+cat urlfile | urlp --part=host | sort | uniq -c | sort -nr -k1,1
+```
+* Find all url path words (separated by "/"), sorted by count.
+```bash
+cat urlfile | urlp --part=path | tr / \\n | awk '$1!=""' | sort | uniq -c | sort -nr -k1,1
+```
 
 ## Install
 ```
