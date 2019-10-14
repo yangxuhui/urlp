@@ -11,63 +11,50 @@ except ImportError:
     from urllib.parse import parse_qs, urlparse
 
 
-def run_host_command(args, url):
-    hostname = urlparse(url).hostname
-    print(hostname)
-
-
-def run_path_command(args, url):
-    path = urlparse(url).path
-    if args.path_index > -1:
+def get_path(parsed, path_index):
+    path = parsed.path
+    if path_index > -1:
         pathes = path.split('/')
-        if len(pathes) < (args.path_index + 1):
-            sys.stderr.write('path_index out of range\n')
-            exit(1)
-        print(pathes[args.path_index+1])
+        return '' if len(pathes) < (path_index + 1) else pathes[path_index+1]
     else:
-        print(path)
+        return path
 
 
-def run_query_command(args, url):
-    query = urlparse(url).query
-    if args.query_field:
+def get_query(parsed, query_field):
+    query = parsed.query
+    if query_field:
         kvs = parse_qs(query)
-        if args.query_field not in kvs:
-            sys.stderr.write('no query_field named {}\n'.format(args.query_field))
-            exit(1)
-        print(','.join(kvs[args.query_field]))
+        return '' if query_field not in kvs else ','.join(kvs[query_field])
     else:
-        print(query)
+        return query
 
 
-def run_registered_domain(args, url):
-    print(tldextract.extract(url).registered_domain)
-
-
-def run_default_command(args, url):
-    print(url)
-
-
-commands = {
-    'host': run_host_command,
-    'path': run_path_command,
-    'query': run_query_command,
-    'registered_domain': run_registered_domain,
-    'all': run_default_command,
-}
+def run(args, url):
+    parsed = urlparse(url)
+    result = []
+    if args.host:
+        result.append(parsed.hostname)
+    if args.path:
+        result.append(get_path(parsed, args.path_index))
+    if args.query:
+        result.append(get_query(parsed, args.query_field))
+    if args.registered_domain:
+        result.append(tldextract.extract(url).registered_domain)
+    if result:
+        print('\t'.join(result))
+    else:
+        print(url)
 
 
 def execute(args):
-    command = commands[args.part]
     for url in args.input:
-        command(args, url)
+        run(args, url)
 
 
 def execute_from_stdin(args):
-    command = commands[args.part]
     for line in sys.stdin:
         url = line.strip()
-        command(args, url)
+        run(args, url)
 
 
 def main():
@@ -78,13 +65,16 @@ def main():
         description='A command line url parser'
     )
 
-    parser.add_argument('input', metavar='url', nargs='*', help='URL to parse')
-    parser.add_argument('--part', default='all', choices=commands.keys(),
-                        help='Part of URL to show')
-    parser.add_argument('--path_index', type=int, default=-1,
-                        help='Filter parsed path by index')
-    parser.add_argument('--query_field', 
-                        help='Value for the specified query field')
+    parser.add_argument('input', metavar='urls', nargs='*', help='URLs to parse')
+    parser.add_argument('--host', action='store_true', help='hostname')
+    parser.add_argument('-p', '--path', action='store_true', help='Path')
+    parser.add_argument('-i', '--path_index', type=int, default=-1, 
+                        metavar='path_index', help='filter parsed path by index')
+    parser.add_argument('-q', '--query', action='store_true', help='query string')
+    parser.add_argument('-k', '--query_field', metavar='query_field', 
+                        help='value for the specified query field')
+    parser.add_argument('-r', '--registered_domain', action='store_true', 
+                        help='registered domain')
 
     args = parser.parse_args()
 
